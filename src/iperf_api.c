@@ -3110,6 +3110,7 @@ contact_introducer(struct iperf_test *test, int *client_flag)
 {
     int sockfd = 0,n = 0;
     char recvBuff[1024], ipbuf[100];
+    char msgbuf[256] = "";
     struct sockaddr_in serv_addr;
     struct hostent *he;
     struct in_addr **addr_list;
@@ -3138,7 +3139,8 @@ contact_introducer(struct iperf_test *test, int *client_flag)
         return;
     }
     if (test->role != 's') {
-        write(sockfd, "CWEPERF\n", sizeof("CWEPERF\n"));
+        sprintf(msgbuf, "CWEPERF%c%d\n", WEPERF_MSG_SEPARATOR,test->protocol->id);
+        write(sockfd, msgbuf, sizeof(msgbuf));
         while((n = read(sockfd, recvBuff, sizeof(recvBuff)-1)) > 0)
         {
             recvBuff[n] = 0;
@@ -3163,7 +3165,6 @@ contact_introducer(struct iperf_test *test, int *client_flag)
         iperf_set_test_role(test, 'c');
         *client_flag = 1;
     } else if (test->role == 's'){
-        char msgbuf[256] = "";
         printf("Announcing myself as: %s:%d \n", test->bind_address, test->server_port);
         sprintf(msgbuf, "SWEPERF%c%s%c%d\n", WEPERF_MSG_SEPARATOR, test->bind_address, WEPERF_MSG_SEPARATOR,
                 test->server_port);

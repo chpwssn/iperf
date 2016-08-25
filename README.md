@@ -141,6 +141,33 @@ options, please submit a request in the issue tracker:
 Also deprecated is the ability to set the options via environment
 variables.
 
+Addition of weperf
+------------
+This fork of iperf includes the ability to communicate with a `weperf` introducer. weperf expands the iperf model to include multiple iperf servers that are standing by to be tested with for dynamic network testing or testing with volunteers. An iperf client can use the **-W** flag to indicate a weperf introducer to connect to, the introducer will then pair the client with an iperf server that has checked in with the introducer and passed a periodic heartbeat test (also via the **-W** flag). 
+
+    +--------------+ +-------------------+ +--------------+
+    | iperf server | | weperf introducer | | iperf client |
+    +------+-------+ +---------+---------+ +-------+------+
+           |                   |                   |
+           +---------------->  |                   |
+           | Initial Check In  |                   |
+           |                   |                   |
+           |  <----------------+                   |
+           | Periodic Heartbeat|                   |
+           |     (1 TCP Packet)|                   |
+           |                   |  <----------------+
+           |                   | Introducer Contact|
+           |                   |                   |
+           |                   +---------------->  |
+           |                   | Server Address    |
+           |                   |    and Port       |
+           | <-------------------------------------+
+           |                   |  Begin iperf test |
+           |                   |                   |
+           |                   |                   |
+           +                   +                   +
+
+
 Known Issues
 ------------
 
