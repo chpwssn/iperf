@@ -160,5 +160,15 @@ if test "x$iperf3_cv_header_so_max_pacing_rate" = "xyes"; then
     AC_DEFINE([HAVE_SO_MAX_PACING_RATE], [1], [Have SO_MAX_PACING_RATE sockopt.])
 fi
 
+# Weperf support configuration flag
+AC_ARG_WITH(weperf, [  --with-weperf           enable weperf support])
+
+if test "$with_weperf" != ""
+then
+AC_MSG_NOTICE([Compiling with weperf support.])
+AC_DEFINE([WEPERF_SUPPORT], [1], [Have weperf support])
+else
+AC_MSG_NOTICE([No weperf support.])
+fi
 
 AC_OUTPUT([Makefile src/Makefile src/version.h examples/Makefile iperf3.spec])

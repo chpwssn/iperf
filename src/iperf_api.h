@@ -73,6 +73,12 @@ struct iperf_stream;
 #define ACCESS_DENIED (-1)
 #define SERVER_ERROR (-2)
 
+
+/*weperf intruducer options*/
+#define WEPERF_MSG_SEPARATOR ':'
+#define WEPERF_ANNOUNCE_DEFAULT_PORT  44478
+
+
 /* Getter routines for some fields inside iperf_test. */
 int	iperf_get_verbose( struct iperf_test* ipt );
 int	iperf_get_control_socket( struct iperf_test* ipt );
@@ -348,5 +354,10 @@ enum {
     IENEWTIMER = 300,       // Unable to create new timer (check perror)
     IEUPDATETIMER = 301,    // Unable to update timer (check perror)
 };
+
+#ifdef WEPERF_SUPPORT
+/* Introducer (weperf) routines */
+void contact_introducer(struct iperf_test *, int *);
+#endif 
 
 #endif /* !__IPERF_API_H */

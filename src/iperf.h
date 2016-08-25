@@ -221,6 +221,7 @@ struct iperf_test
     char     *title;				/* -T option */
     char     *congestion;			/* -C option */
     char     *pidfile;				/* -P option */
+    char     *introducer;           /* -W option */
 
     char     *logfile;				/* --logfile option */
     FILE     *outfile;

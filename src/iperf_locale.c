@@ -157,7 +157,10 @@ const char usage_longstr[] = "Usage: iperf [-s|-c host] [options]\n"
                            "  --no-fq-socket-pacing     disable fair-queuing based socket pacing\n"
 			               "                            (Linux only)\n"
 #endif
-
+#ifdef WEPERF_SUPPORT
+                           "  -W,--introducer <hostname> hostname or IP address of weperf introducer\n"
+#endif /* WEPERF_SUPPORT */
+    
 #ifdef NOT_YET_SUPPORTED /* still working on these */
 #endif
 
@@ -170,6 +173,11 @@ const char usage_longstr[] = "Usage: iperf [-s|-c host] [options]\n"
 #ifdef PACKAGE_BUGREPORT
                            "Report bugs to:     " PACKAGE_BUGREPORT "\n"
 #endif /* PACKAGE_BUGREPORT */
+#ifdef WEPERF_SUPPORT
+#ifdef WEPERF_URL
+    
+#endif /* WEPERF_URL */
+#endif /* WEPERF_SUPPORT */
 			   ;
 
 #ifdef OBSOLETE /* from old iperf: no longer supported. Add some of these back someday */

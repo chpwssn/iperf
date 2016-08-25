@@ -637,6 +637,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
         {"parallel", required_argument, NULL, 'P'},
         {"reverse", no_argument, NULL, 'R'},
         {"window", required_argument, NULL, 'w'},
+        {"introducer", required_argument, NULL, 'W'},
         {"bind", required_argument, NULL, 'B'},
         {"cport", required_argument, NULL, OPT_CLIENT_PORT},
         {"set-mss", required_argument, NULL, 'M'},
@@ -685,7 +686,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 
     blksize = 0;
     server_flag = client_flag = rate_flag = duration_flag = 0;
-    while ((flag = getopt_long(argc, argv, "p:f:i:D1VJvsc:ub:t:n:k:l:P:Rw:B:M:N46S:L:ZO:F:A:T:C:dI:hX:", longopts, NULL)) != -1) {
+    while ((flag = getopt_long(argc, argv, "p:f:i:D1VJvsc:ub:t:n:k:l:P:Rw:B:M:N46S:L:ZO:F:A:T:C:dI:hX:W:", longopts, NULL)) != -1) {
         switch (flag) {
             case 'p':
                 test->server_port = atoi(optarg);
@@ -815,6 +816,14 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
                 }
 		client_flag = 1;
                 break;
+#ifdef WEPERF_SUPPORT
+            case 'W':
+                // Weperf introducer
+                test->introducer = calloc((8*4)+7, sizeof(char));
+                iperf_set_test_server_hostname(test, optarg);
+                contact_introducer(test, &client_flag);
+                break;
+#endif /* !WEPERF_SUPPORT */
             case 'B':
                 test->bind_address = strdup(optarg);
                 break;
@@ -3094,3 +3103,84 @@ iflush(struct iperf_test *test)
 {
     return fflush(test->outfile);
 }
+
+#ifdef WEPERF_SUPPORT
+void
+contact_introducer(struct iperf_test *test, int *client_flag)
+{
+    int sockfd = 0,n = 0;
+    char recvBuff[1024], ipbuf[100];
+    struct sockaddr_in serv_addr;
+    struct hostent *he;
+    struct in_addr **addr_list;
+    
+    memset(recvBuff, '0' ,sizeof(recvBuff));
+    if((sockfd = socket(AF_INET, SOCK_STREAM, 0))< 0)
+    {
+        printf("\n Error : Could not create socket \n");
+        return;
+    }
+    
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(WEPERF_ANNOUNCE_DEFAULT_PORT);
+    if ( (he = gethostbyname( test->server_hostname ) ) == NULL)
+    {
+        serv_addr.sin_addr.s_addr = inet_addr(test->server_hostname);
+    } else {
+        addr_list = (struct in_addr **) he->h_addr_list;
+        strcpy(ipbuf , inet_ntoa(*addr_list[0]) );
+        serv_addr.sin_addr.s_addr = inet_addr(ipbuf);
+    }
+    
+    if(connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr))<0)
+    {
+        printf("\n Error : Could not connect to weperf introducer \n");
+        return;
+    }
+    if (test->role != 's') {
+        write(sockfd, "CWEPERF\n", sizeof("CWEPERF\n"));
+        while((n = read(sockfd, recvBuff, sizeof(recvBuff)-1)) > 0)
+        {
+            recvBuff[n] = 0;
+            if(fputs(recvBuff, stdout) == EOF)
+            {
+                printf("\n Error : Fputs error");
+            }
+            printf("\n");
+        }
+        if( n < 0)
+        {
+            printf("\n Read Error \n");
+        }
+        cJSON *root = cJSON_Parse(recvBuff);
+        iperf_set_test_server_hostname(test, cJSON_GetObjectItem(root,"server")->valuestring);
+        test->server_port = cJSON_GetObjectItem(root,"port")->valueint;
+        if (test->server_port == 0) {
+            printf("There are no weperf nodes available at this introducer\n");
+            exit(233);
+        }
+        printf("Introduced to: %s:%d\n", test->server_hostname, test->server_port);
+        iperf_set_test_role(test, 'c');
+        *client_flag = 1;
+    } else if (test->role == 's'){
+        char msgbuf[256] = "";
+        printf("Announcing myself as: %s:%d \n", test->bind_address, test->server_port);
+        sprintf(msgbuf, "SWEPERF%c%s%c%d\n", WEPERF_MSG_SEPARATOR, test->bind_address, WEPERF_MSG_SEPARATOR,
+                test->server_port);
+        write(sockfd, msgbuf, sizeof(msgbuf));
+        while((n = read(sockfd, recvBuff, sizeof(recvBuff)-1)) > 0)
+        {
+            recvBuff[n] = 0;
+            if(fputs(recvBuff, stdout) == EOF)
+            {
+                printf("\n Error : Fputs error");
+            }
+            printf("\n");
+        }
+        if( n < 0)
+        {
+            printf("\n Read Error \n");
+        }
+    }
+}
+#endif
